@@ -14,7 +14,7 @@
       <div>
         <% if (userID) { %>
           <div>
-            <p>Logged in to <%= usersObject[userID].email %> </p>
+            <p>Logged in to <%= usersObject[userID]['email'] %> </p>
           </div>
           <div>
             <form method="POST" action="/logout">

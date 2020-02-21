@@ -19,10 +19,19 @@ function generateRandomString() {
   return results;
 };
 
+function getUsersURLS(userID) {
+  let usersURLS = {};
+  for (let urlID in urlDatabase) {
+    if (urlDatabase[urlID].userID === userID) {
+      usersURLS[urlID] = urlDatabase[urlID];
+    }
+  }
+  return usersURLS;
+}
+
 function emailExists(email) {
   for (let userID in users) {
     if (users[userID].email === email) {
-      console.log(`if EmailEists: ${users[userID].email} === ${email}`)
       let profile = users[userID];
       return profile;
     }
@@ -58,12 +67,17 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  let templateVars = { 
-    urls: urlDatabase, 
-    userID: req.cookies['user_id'],
-    usersObject: users,
-  };
-  res.render("urls_index", templateVars);
+  if(!req.cookies['user_id']) {
+    res.redirect('/login')
+  } else {
+    let usersURLS = getUsersURLS(req.cookies['user_id']);
+    let templateVars = { 
+      urls: usersURLS, 
+      userID: req.cookies['user_id'],
+     usersObject: users,
+    };
+    res.render("urls_index", templateVars);
+  }
 });
 
 app.get("/urls/new", (req, res) => {
@@ -79,13 +93,19 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL]['longURL'],
-    userID: req.cookies['user_id'],
-    usersObject: users,
-  };
+  if (!req.cookies['user_id']) {
+    res.redirect('/login')
+  } else if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].userID) {
+    res.redirect('https://www.youtube.com/watch?v=otCpCn0l4Wo')
+  } else {
+    let templateVars = {
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL]['longURL'],
+      userID: req.cookies['user_id'],
+      usersObject: users,
+    };
   res.render("urls_show", templateVars);
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -157,8 +177,12 @@ app.post("/logout", (req, res) => {
 })
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  if (!req.cookies['user_id']) {
+    res.redirect('/login')
+  } else {
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls")
+  }
 })
 
 app.post("/urls/:shortURL", (req, res) => {
