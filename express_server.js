@@ -67,32 +67,33 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  if(!req.cookies['user_id']) {
+  let user = users[req.cookies.user_id];
+  if(!user) {
     res.redirect('/login')
   } else {
-    let usersURLS = getUsersURLS(req.cookies['user_id']);
+    let usersURLS = getUsersURLS(user.id);
     let templateVars = { 
       urls: usersURLS, 
-      userID: req.cookies['user_id'],
-     usersObject: users,
+      user: user,
     };
     res.render("urls_index", templateVars);
   }
 });
 
 app.get("/urls/new", (req, res) => {
+  let user = users[req.cookies.user_id];
   if(!req.cookies['user_id']) {
     res.redirect('/login')
   } else {
   let templateVars = { 
-    userID: req.cookies['user_id'],
-    usersObject: users,
+    user: user,
   };
   res.render("urls_new", templateVars);
   }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  let user = users[req.cookies.user_id];
   if (!req.cookies['user_id']) {
     res.redirect('/login')
   } else if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].userID) {
@@ -101,8 +102,7 @@ app.get("/urls/:shortURL", (req, res) => {
     let templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL]['longURL'],
-      userID: req.cookies['user_id'],
-      usersObject: users,
+      user: user,
     };
   res.render("urls_show", templateVars);
   }
@@ -114,17 +114,17 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  let user = users[req.cookies.user_id];
   let templateVars = { 
-    userID: req.cookies['user_id'],
-    usersObject: users,
+    user: user,
   };
   res.render("users_new", templateVars);
 })
 
 app.get("/login", (req, res) => {
+  let user = users[req.cookies.user_id];
   let templateVars = { 
-    userID: req.cookies['user_id'],
-    usersObject: users,
+    user: user,
   };
   res.render("login", templateVars);
 })
@@ -179,7 +179,11 @@ app.post("/logout", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!req.cookies['user_id']) {
     res.redirect('/login')
-  } else {
+  } 
+  else if (urlDatabase[req.params.shortURL]['userID'] !== req.cookies['user_id']) {
+    res.status(401).send("You can't delete this, it isn't yours to delete")
+  } 
+  else {
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls")
   }
