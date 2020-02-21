@@ -22,7 +22,9 @@ function generateRandomString() {
 function emailExists(email) {
   for (let userID in users) {
     if (users[userID].email === email) {
-      return true
+      console.log(`if EmailEists: ${users[userID].email} === ${email}`)
+      let profile = users[userID];
+      return profile;
     }
   }
   return false;
@@ -56,7 +58,11 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  
+  let templateVars = { 
+    urls: urlDatabase, 
+    userID: req.cookies['user_id'],
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -68,6 +74,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
+    userID: req.cookies['user_id'],
   };
   res.render("urls_show", templateVars);
 });
@@ -79,6 +86,10 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.get("/register", (req, res) => {
   res.render("users_new")
+})
+
+app.get("/login", (req, res) => {
+  res.render("login")
 })
 
 //POST REQUESTS ---------------------------------
@@ -108,6 +119,18 @@ app.post("/register", (req, res) => {
 
 app.post("/login", (req, res) => {
   console.log('req.body = ', req.body)
+  let email = req.body.email;
+  let password = req.body.password;
+  console.log(`/login ${email} into emailExists`)
+  let user = emailExists(email);
+  if (!emailExists(email)) {
+    res.status(403).send('There is no account under this email, please register an account.')
+  }
+  if (user.password === password) {
+    res.cookie("user_id", user.id);
+  }
+  console.log(emailExists(email));
+  // if (emailExists(email) && )
 
   res.redirect('/urls');
 })
