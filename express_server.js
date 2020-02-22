@@ -1,13 +1,13 @@
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080;
 const bodyParser = require("body-parser");
-// const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
+const { getUserByEmail } = require('./helpers');
+
 
 app.use(bodyParser.urlencoded({extended: true}));
-// app.use(cookieParser());
 
 app.set('view engine', 'ejs');
 
@@ -36,15 +36,6 @@ function getUsersURLS(userID) {
   return usersURLS;
 }
 
-function emailExists(email) {
-  for (let userID in users) {
-    if (users[userID].email === email) {
-      let profile = users[userID];
-      return profile;
-    }
-  }
-  return false;
-}
 
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: '9xqii7'},
@@ -134,7 +125,7 @@ app.post("/register", (req, res) => {
   if (!email || !req.body.password) {
     res.status(400).send("You didn't enter anything bro")
   }
-  if (emailExists(email)) {
+  if (getUserByEmail(email, users)) {
     res.status(400).send("There is already an account linked to that e-mail address.");
     res.redirect('/register');
   }
@@ -155,9 +146,8 @@ app.post("/login", (req, res) => {
   console.log('req.body = ', req.body)
   let email = req.body.email;
   let password = req.body.password;
-  console.log(`/login ${email} into emailExists`)
-  let user = emailExists(email);
-  if (!emailExists(email)) {
+  let user = getUserByEmail(email, users);
+  if (!getUserByEmail(email, users)) {
     res.status(403).send('There is no account under this email, please register an account.')
   }
   if (bcrypt.compareSync(password, user.password)) {
@@ -165,9 +155,6 @@ app.post("/login", (req, res) => {
   } else {
     res.status(403).send('Incorrect Password, try again buddy.')
   }
-  console.log(emailExists(email));
-  // if (emailExists(email) && )
-
   res.redirect('/urls');
 })
 
